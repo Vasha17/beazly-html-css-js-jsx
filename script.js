@@ -389,20 +389,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // === SHARE FUNCTIONS ===
     const shareViaWhatsapp = () => {
-        const message = `Bergabunglah dengan grup kolaborasi ScholarTrack saya! Kode: ${currentCollabGroup}`;
+        const message = `Bergabunglah dengan grup kolaborasi Beazly saya! Kode: ${currentCollabGroup}`;
         const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
         window.open(url, '_blank');
     };
 
     const shareViaEmail = () => {
-        const subject = 'Undangan Grup Kolaborasi ScholarTrack';
-        const body = `Hai,\n\nBergabunglah dengan grup kolaborasi ScholarTrack saya menggunakan kode berikut:\n\nKode: ${currentCollabGroup}\n\nSalam,\n`;
+        const subject = 'Undangan Grup Kolaborasi Beazly';
+        const body = `Hai,\n\nBergabunglah dengan grup kolaborasi Beazly saya menggunakan kode berikut:\n\nKode: ${currentCollabGroup}\n\nSalam,\n`;
         const url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.location.href = url;
     };
 
     const shareViaTelegram = () => {
-        const message = `Bergabunglah dengan grup kolaborasi ScholarTrack saya! Kode: ${currentCollabGroup}`;
+        const message = `Bergabunglah dengan grup kolaborasi Beazly saya! Kode: ${currentCollabGroup}`;
         const url = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(message)}`;
         window.open(url, '_blank');
     };

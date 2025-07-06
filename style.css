@@ -588,43 +588,65 @@
 
     /* === MODAL STYLES === */
     .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.6);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s, visibility 0.3s;
-    }
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+    padding: 20px; /* Tambahkan padding untuk menjaga jarak dari edge viewport */
+    box-sizing: border-box; /* Pastikan padding termasuk dalam width/height */
+}
+
+.modal-content {
+    background-color: var(--card-background);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(0); /* Ubah dari -50px ke 0 untuk awal */
+    transition: transform 0.4s ease-out;
+    margin-top: env(safe-area-inset-top); /* Untuk device dengan notch */
+    margin-bottom: env(safe-area-inset-bottom); /* Untuk device dengan bottom bar */
+}
+
+/* Jika masih perlu animasi slide up */
+.modal-overlay:not(.active) .modal-content {
+    transform: translateY(-20px); /* Kurangi jarak translate untuk mobile */
+}
+
+.modal-header {
+    padding: 1.5rem 1.5rem 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1rem;
+    position: relative; /* Tambahkan ini */
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    padding-bottom: 0.5rem;
+    align-self: flex-end;
+    max-width: calc(100% - 3rem); /* Pastikan title tidak overlap close button */
+}
 
     .modal-overlay.active {
         opacity: 1;
         visibility: visible;
-    }
-
-    .modal-content {
-        background-color: var(--card-background);
-        border-radius: 12px;
-        width: 90%;
-        max-width: 500px;
-        max-height: 90vh;
-        display: flex;
-        flex-direction: column;
-        transform: translateY(-50px);
-        transition: transform 0.4s ease-out;
-    }
-
-    .modal-header {
-        padding: 1.5rem 1.5rem 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
     }
 
     .modal-body {

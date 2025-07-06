@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderScholarshipList = () => {
         scholarshipListContainer.innerHTML = '';
         if (scholarships.length === 0) {
-            scholarshipListContainer.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 2rem;">Mulai dengan menambahkan beasiswa pertama Anda!</p>';
+            scholarshipListContainer.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 2rem;">Mulai tambahkan beasiswa pertama Anda!</p>';
             return;
         }
 

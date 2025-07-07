@@ -178,7 +178,6 @@ const APPLICATION_STATUSES = {
                     <div class="progress-bar-container">
                         <div class="progress-bar" style="width: ${progressData.progress}%"></div>
                     </div>
-                    // Di dalam renderScholarshipList(), ubah bagian tombol aksi:
                     ${status === APPLICATION_STATUSES.IN_PROGRESS ? `
                     <div class="submission-actions">
                         <button class="btn-submit" data-id="${s.id}">Submit Aplikasi</button>

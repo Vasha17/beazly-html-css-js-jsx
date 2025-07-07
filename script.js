@@ -80,19 +80,27 @@ const APPLICATION_STATUSES = {
 
    const getApplicationStatus = (scholarship) => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalisasi waktu hari ini
+    
     const startDate = new Date(scholarship.start + 'T00:00:00');
+    const endDate = new Date(scholarship.end + 'T00:00:00');
     
-    // Jika belum dibuka
-    if (today < startDate) {
-        return APPLICATION_STATUSES.NOT_OPEN;
-    }
-    
-    // Jika sudah ada status, kembalikan status tersebut
+    // 1. Jika sudah ada status yang diset manual, kembalikan status tersebut
     if (scholarship.applicationStatus) {
         return scholarship.applicationStatus;
     }
     
-    // Default status setelah beasiswa dibuka
+    // 2. Jika tanggal hari ini sebelum tanggal buka -> "Belum Dibuka"
+    if (today < startDate) {
+        return APPLICATION_STATUSES.NOT_OPEN;
+    }
+    
+    // 3. Jika tanggal hari ini sudah melewati tanggal tutup -> "Dalam Proses" (default)
+    if (today > endDate) {
+        return APPLICATION_STATUSES.IN_PROGRESS;
+    }
+    
+    // 4. Jika tanggal hari ini antara tanggal buka dan tutup -> "Dalam Proses"
     return APPLICATION_STATUSES.IN_PROGRESS;
 };
 
@@ -686,25 +694,24 @@ const updateApplicationResult = (id, status) => {
     }
 
     // Create new scholarship object
-    const newScholarship = {
-        id,
-        name,
-        start,
-        end,
-        links: {
-            info: infoLink,
-            register: registerLink
-        },
-        requirements: requirementsText.split('\n')
-            .filter(line => line.trim() !== '')
-            .map(text => ({ text: text.trim(), completed: false })),
-         applicationStatus: document.getElementById('application-status').value
-    };
+    // Di dalam form submit handler:
+const newScholarship = {
+    id,
+    name,
+    start,
+    end,
+    links: {
+        info: infoLink,
+        register: registerLink
+    },
+    requirements: requirementsText.split('\n')
+        .filter(line => line.trim() !== '')
+        .map(text => ({ text: text.trim(), completed: false })),
+};
 
     // Check if editing existing scholarship
     const existingIndex = scholarships.findIndex(s => s.id === id);
     if (existingIndex >= 0) {
-        // Preserve existing status and completed requirements
         newScholarship.applicationStatus = scholarships[existingIndex].applicationStatus;
         newScholarship.requirements = newScholarship.requirements.map(newReq => {
             const existingReq = scholarships[existingIndex].requirements.find(r => r.text === newReq.text);
@@ -750,7 +757,7 @@ const updateApplicationResult = (id, status) => {
         document.getElementById('register-link').value = scholarship.links?.register || '';
         document.getElementById('requirements').value = scholarship.requirements.map(r => r.text).join('\n');
         
-        document.getElementById('application-status').value = scholarship.applicationStatus || '';
+        document.getElementById('application-status').value = scholarship.applicationStatus || 'IN_PROGRESS';
         modal.classList.add('active');
     }
     return;

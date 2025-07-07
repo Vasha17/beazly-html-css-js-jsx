@@ -17,7 +17,6 @@
     <div class="app-container">
         <div class="header-content">
             <div class="header-left">
-                <!-- Enhanced Beazly Logo -->
                 <div class="beazly-logo" aria-label="Beazly Scholarship Tracker">
                     <div class="book">
                         <div class="pages">
@@ -28,10 +27,12 @@
                     </div>
                     <div class="ribbon"></div>
                 </div>
-                <h1>Beazly</h1>
+                <div class="title-wrapper">
+                    <h1>Beazly</h1>
+                    <p class="tagline">Your beasiswa buddy. Track it. No Missed Scholarships!</p>
+                </div>
             </div>
             <div class="header-right">
-                <!-- Original Collaboration Button (Unchanged) -->
                 <button id="collab-btn" class="icon-btn" title="Mode Kolaborasi">
                     <span class="material-icons-sharp">group_add</span>
                 </button>
@@ -118,12 +119,12 @@
                     
                     <div class="form-group">
                         <label for="scholarship-link">Link Informasi Beasiswa</label>
-                        <input type="url" id="scholarship-link" placeholder="https://beasiswa.example.com">
+                         <input type="url" id="info-link">
                     </div>
                     
                     <div class="form-group">
                         <label for="application-link">Link Pendaftaran</label>
-                        <input type="url" id="application-link" placeholder="https://daftar.beasiswa.example.com">
+                         <input type="url" id="register-link">
                     </div>
                     
                     <div class="date-group">
@@ -151,18 +152,15 @@
                     <div class="form-group">
                         <label>Status Aplikasi</label>
                         <select id="application-status">
-                            <option value="belum_buka">Belum Buka</option>
-                            <option value="dalam_proses">Dalam Proses</option>
-                            <option value="sudah_dikirim">Sudah Dikirim</option>
-                            <option value="diterima">Diterima</option>
-                            <option value="ditolak">Ditolak</option>
+                            <option value="NOT_OPEN">Belum Dibuka</option>
+                            <option value="IN_PROGRESS">Dalam Proses</option>
                         </select>
                     </div>
-                    
-                    <label for="requirements">Persyaratan (satu per baris)</label>
-                    <textarea id="requirements" placeholder="Siapkan Ijazah
-Tulis Esai Kontribusi
-Minta Surat Rekomendasi" rows="4"></textarea>
+                    <label for="requirements">Syarat (satu per baris)</label>
+                    <textarea id="requirements" placeholder="Ijazah
+Esai
+Surat Rekomendasi
+IELTS/TOEFL" rows="4"></textarea>
                     
                     <div class="form-actions">
                         <button type="button" class="outline-btn" id="cancel-btn">Batal</button>
@@ -281,5 +279,22 @@ Minta Surat Rekomendasi" rows="4"></textarea>
     </div>
 
     <script src="script.js"></script>
+    <!-- Modal Konfirmasi Hapus -->
+<div id="delete-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Konfirmasi Hapus</h3>
+      <button class="close-modal" type="button">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>Apakah Anda yakin ingin menghapus beasiswa ini?</p>
+      <div class="form-actions" style="justify-content: flex-end;">
+        <button id="cancel-delete-btn" class="outline-btn" type="button">Batal</button>
+        <button id="confirm-delete-btn" class="danger-btn" type="button">Hapus</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -6,6 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCollabGroup = localStorage.getItem('collabGroup') || null;
     let collabMembers = JSON.parse(localStorage.getItem('collabMembers')) || [];
 
+    // Tambahkan status SUBMITTED
+const APPLICATION_STATUSES = {
+    NOT_OPEN: 'Belum Dibuka',    // Warna abu-abu (#6c757d)
+    IN_PROGRESS: 'Dalam Proses', // Warna kuning (#ffc107)
+    SUBMITTED: 'Telah Dikirim',  // Warna biru (#17a2b8)
+    ACCEPTED: 'Diterima',        // Warna hijau (#28a745)
+    REJECTED: 'Ditolak'          // Warna merah (#dc3545)
+};
+
     // === DOM ELEMENTS ===
     const addScholarshipBtn = document.getElementById('add-scholarship-btn');
     const modal = document.getElementById('form-modal');
@@ -40,9 +49,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const qrCodeContainer = document.getElementById('qr-code');
     const createCollabBtn = document.getElementById('create-collab-btn');
     const groupCodeSection = document.getElementById('group-code-section');
+    const deleteModal = document.getElementById('delete-modal');
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
 
     // === HELPER FUNCTIONS ===
-    const saveScholarships = () => {
+     const saveScholarships = () => {
         localStorage.setItem('scholarships', JSON.stringify(scholarships));
         if (currentCollabGroup) {
             localStorage.setItem('collabGroup', currentCollabGroup);
@@ -66,38 +78,89 @@ document.addEventListener('DOMContentLoaded', () => {
         return Math.random().toString(36).substring(2, 10);
     };
 
+   const getApplicationStatus = (scholarship) => {
+    const today = new Date();
+    const startDate = new Date(scholarship.start + 'T00:00:00');
+    
+    // Jika belum dibuka
+    if (today < startDate) {
+        return APPLICATION_STATUSES.NOT_OPEN;
+    }
+    
+    // Jika sudah ada status, kembalikan status tersebut
+    if (scholarship.applicationStatus) {
+        return scholarship.applicationStatus;
+    }
+    
+    // Default status setelah beasiswa dibuka
+    return APPLICATION_STATUSES.IN_PROGRESS;
+};
+
+    const getStatusColor = (status) => {
+    switch(status) {
+        case APPLICATION_STATUSES.NOT_OPEN: return '#6c757d';    // Abu-abu
+        case APPLICATION_STATUSES.IN_PROGRESS: return '#ffc107'; // Kuning
+        case APPLICATION_STATUSES.SUBMITTED: return '#17a2b8';   // Biru
+        case APPLICATION_STATUSES.ACCEPTED: return '#28a745';    // Hijau
+        case APPLICATION_STATUSES.REJECTED: return '#dc3545';    // Merah
+        default: return '#6c757d';                               // Default abu-abu
+    }
+};
+
     // === RENDERING FUNCTIONS ===
-    const renderScholarshipList = () => {
-        scholarshipListContainer.innerHTML = '';
-        if (scholarships.length === 0) {
-            scholarshipListContainer.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 2rem;">Mulai tambahkan beasiswa pertama Anda!</p>';
-            return;
-        }
+   const renderScholarshipList = () => {
+    scholarshipListContainer.innerHTML = '';
+    if (scholarships.length === 0) {
+        scholarshipListContainer.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 2rem;">Mulai tambahkan beasiswa pertama Anda!</p>';
+        return;
+    }
 
-        scholarships.forEach((s, index) => {
-            const progressData = calculateProgress(s);
-            const startDate = new Date(s.start + 'T00:00:00');
-            const endDate = new Date(s.end + 'T00:00:00');
-            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+    scholarships.forEach((s, index) => {
+        const progressData = calculateProgress(s);
+        const startDate = new Date(s.start + 'T00:00:00');
+        const endDate = new Date(s.end + 'T00:00:00');
+        const options = { day: 'numeric', month: 'long', year: 'numeric' };
+        const status = getApplicationStatus(s);
+        const statusColor = getStatusColor(status);
 
-            const item = document.createElement('div');
-            item.className = 'scholarship-list-item';
-            item.setAttribute('data-id', s.id);
-            item.style.animationDelay = `${index * 0.1}s`;
-            
-            item.innerHTML = `
-                <div class="item-header">
-                    <h3>${s.name}</h3>
+        const item = document.createElement('div');
+        item.className = 'scholarship-list-item';
+        item.setAttribute('data-id', s.id);
+        item.style.animationDelay = `${index * 0.1}s`;
+        
+        // Header dengan toggle
+ item.innerHTML = `
+            <div class="item-header">
+                <div class="header-content" style="display: flex; justify-content: space-between; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="toggle-icon material-icons-sharp">chevron_right</span>
+                        <h3 style="margin: 0;">${s.name}</h3>
+                    </div>
                     <div class="item-actions">
+                        <span class="status-badge" style="background-color: ${statusColor}">${status}</span>
                         <button class="edit-btn" title="Edit" data-id="${s.id}">
                             <span class="material-icons-sharp">edit</span>
                         </button>
-                        <button class="delete-btn" title="Hapus">
+                        <button class="delete-btn" title="Hapus" data-id="${s.id}">
                             <span class="material-icons-sharp">delete_outline</span>
                         </button>
                     </div>
                 </div>
-                <div class="item-body">
+            </div>
+            <div class="item-body" style="display: none;">
+                <div class="item-details">
+                    ${s.links?.info ? `
+                    <p><strong>Link Informasi:</strong> 
+                        <a href="${s.links.info}" target="_blank" rel="noopener noreferrer">
+                            ${s.links.info}
+                        </a>
+                    </p>` : ''}
+                    ${s.links?.register ? `
+                    <p><strong>Link Pendaftaran:</strong> 
+                        <a href="${s.links.register}" target="_blank" rel="noopener noreferrer">
+                            ${s.links.register}
+                        </a>
+                    </p>` : ''}
                     <p><strong>Periode:</strong> ${startDate.toLocaleDateString('id-ID', options)} - ${endDate.toLocaleDateString('id-ID', options)}</p>
                     <ul class="requirements-list">
                         ${s.requirements.map(req => `
@@ -115,74 +178,149 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="progress-bar-container">
                         <div class="progress-bar" style="width: ${progressData.progress}%"></div>
                     </div>
-                </div>`;
-            scholarshipListContainer.appendChild(item);
+                    // Di dalam renderScholarshipList(), ubah bagian tombol aksi:
+                    ${status === APPLICATION_STATUSES.IN_PROGRESS ? `
+                    <div class="submission-actions">
+                        <button class="btn-submit" data-id="${s.id}">Submit Aplikasi</button>
+                    </div>
+                    ` : status === APPLICATION_STATUSES.SUBMITTED ? `
+                    <div class="submission-result">
+                        <button class="btn-accepted" data-id="${s.id}">Diterima</button>
+                        <button class="btn-rejected" data-id="${s.id}">Ditolak</button>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>`;
+        scholarshipListContainer.appendChild(item);
+    });
+
+    // Tambahkan event listener untuk toggle
+    document.querySelectorAll('.item-header').forEach(header => {
+        header.addEventListener('click', (e) => {
+            // Jangan trigger toggle jika mengklik tombol edit/delete
+            if (e.target.closest('.edit-btn') || e.target.closest('.delete-btn')) {
+                return;
+            }
+            
+            const body = header.nextElementSibling;
+            const icon = header.querySelector('.toggle-icon');
+            
+            if (body.style.display === 'none') {
+                body.style.display = 'block';
+                icon.textContent = 'expand_more';
+            } else {
+                body.style.display = 'none';
+                icon.textContent = 'chevron_right';
+            }
         });
-    };
+    });
+};
 
-    const renderTimeline = () => {
-        timelineContainer.innerHTML = '';
+   const renderTimeline = () => {
+    timelineContainer.innerHTML = '';
 
-        if (scholarships.length === 0) {
-            timelineContainer.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 2rem;">Timeline akan muncul di sini.</p>';
-            return;
-        }
+    if (scholarships.length === 0) {
+        timelineContainer.innerHTML = '<p style="color: #6c757d; text-align: center; padding: 2rem;">Timeline akan muncul di sini.</p>';
+        return;
+    }
 
-        const timelineWrapper = document.createElement('div');
-        timelineWrapper.className = 'timeline-container';
-        const monthsDiv = document.createElement('div');
-        monthsDiv.className = 'timeline-months';
-        const eventsDiv = document.createElement('div');
-        eventsDiv.className = 'timeline-events';
-        timelineWrapper.append(monthsDiv, eventsDiv);
-        timelineContainer.appendChild(timelineWrapper);
+    const timelineWrapper = document.createElement('div');
+    timelineWrapper.className = 'timeline-container';
+    
+    // Tambahkan container untuk tahun
+    const yearsDiv = document.createElement('div');
+    yearsDiv.className = 'timeline-years';
+    
+    // Buat container untuk bulan
+    const monthsDiv = document.createElement('div');
+    monthsDiv.className = 'timeline-months';
+    
+    // Buat container untuk event (beasiswa)
+    const eventsDiv = document.createElement('div');
+    eventsDiv.className = 'timeline-events';
+    
+    timelineWrapper.append(yearsDiv, monthsDiv, eventsDiv);
+    timelineContainer.appendChild(timelineWrapper);
 
-        const allDates = scholarships.flatMap(s => [new Date(s.start + 'T00:00:00'), new Date(s.end + 'T00:00:00')]);
-        const minDate = new Date(Math.min.apply(null, allDates));
-        const maxDate = new Date(Math.max.apply(null, allDates));
+    // Hitung rentang tanggal
+    const allDates = scholarships.flatMap(s => [new Date(s.start + 'T00:00:00'), new Date(s.end + 'T00:00:00')]);
+    const minDate = new Date(Math.min(...allDates.map(date => date.getTime())));
+    const maxDate = new Date(Math.max(...allDates.map(date => date.getTime())));
+    
+    // Pastikan ada minimal rentang 1 bulan
+    minDate.setDate(1);
+    maxDate.setMonth(maxDate.getMonth() + 1, 0);
+
+    const totalDurationInDays = (maxDate - minDate) / (1000 * 60 * 60 * 24);
+    if (totalDurationInDays <= 0) return;
+
+    // Render tahun
+    let currentYear = minDate.getFullYear();
+    const endYear = maxDate.getFullYear();
+    
+    while (currentYear <= endYear) {
+        const yearDiv = document.createElement('div');
+        yearDiv.className = 'timeline-year';
+        yearDiv.textContent = currentYear;
         
-        minDate.setDate(1);
-        maxDate.setMonth(maxDate.getMonth() + 1, 0);
+        // Hitung lebar tahun (berdasarkan jumlah hari dalam tahun)
+        const yearStart = new Date(currentYear, 0, 1);
+        const yearEnd = new Date(currentYear, 11, 31);
+        const yearDays = (Math.min(yearEnd, maxDate) - Math.max(yearStart, minDate)) / (1000 * 60 * 60 * 24) + 1;
+        const yearWidth = (yearDays / totalDurationInDays) * 100;
+        
+        yearDiv.style.width = `${yearWidth}%`;
+        yearsDiv.appendChild(yearDiv);
+        
+        currentYear++;
+    }
 
-        const totalDurationInDays = (maxDate - minDate) / (1000 * 60 * 60 * 24);
-        if (totalDurationInDays <= 0) return;
+    // Render bulan
+    let currentDate = new Date(minDate);
+    while (currentDate <= maxDate) {
+        const monthDiv = document.createElement('div');
+        monthDiv.className = 'timeline-month';
+        monthDiv.textContent = currentDate.toLocaleString('id-ID', { month: 'short' });
+        
+        const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+        const monthWidth = (daysInMonth / totalDurationInDays) * 100;
+        monthDiv.style.width = `${monthWidth}%`;
+        
+        monthsDiv.appendChild(monthDiv);
+        currentDate.setMonth(currentDate.getMonth() + 1);
+    }
 
-        let currentDate = new Date(minDate);
-        while (currentDate <= maxDate) {
-            const monthDiv = document.createElement('div');
-            monthDiv.className = 'timeline-month';
-            monthDiv.textContent = currentDate.toLocaleString('id-ID', { month: 'short' });
-            const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-            const monthWidth = (daysInMonth / totalDurationInDays) * 100;
-            monthDiv.style.width = `${monthWidth}%`;
-            monthsDiv.appendChild(monthDiv);
-            currentDate.setMonth(currentDate.getMonth() + 1);
-        }
+    // Render beasiswa (sama seperti sebelumnya)
+    const colors = ['#4A90E2', '#50E3C2', '#F5A623', '#BD10E0', '#7ED321', '#F15B5B'];
+    scholarships.forEach((scholarship, index) => {
+        const eventDiv = document.createElement('div');
+        eventDiv.className = 'timeline-event';
+        eventDiv.textContent = scholarship.name;
+        eventDiv.title = `${scholarship.name} (${scholarship.start} - ${scholarship.end})`;
+        eventDiv.style.backgroundColor = colors[index % colors.length];
 
-        const colors = ['#4A90E2', '#50E3C2', '#F5A623', '#BD10E0', '#7ED321', '#F15B5B'];
-        scholarships.forEach((scholarship, index) => {
-            const eventDiv = document.createElement('div');
-            eventDiv.className = 'timeline-event';
-            eventDiv.textContent = scholarship.name;
-            eventDiv.title = `${scholarship.name} (${scholarship.start} - ${scholarship.end})`;
-            eventDiv.style.backgroundColor = colors[index % colors.length];
+        const startDate = new Date(scholarship.start + 'T00:00:00');
+        const endDate = new Date(scholarship.end + 'T00:00:00');
 
-            const startDate = new Date(scholarship.start + 'T00:00:00');
-            const endDate = new Date(scholarship.end + 'T00:00:00');
+        const offsetInDays = (startDate - minDate) / (1000 * 60 * 60 * 24);
+        const durationInDays = (endDate - startDate) / (1000 * 60 * 60 * 24) + 1;
 
-            const offsetInDays = (startDate - minDate) / (1000 * 60 * 60 * 24);
-            const durationInDays = (endDate - startDate) / (1000 * 60 * 60 * 24) + 1;
+        const leftPosition = (offsetInDays / totalDurationInDays) * 100;
+        const width = (durationInDays / totalDurationInDays) * 100;
 
-            const leftPosition = (offsetInDays / totalDurationInDays) * 100;
-            const width = (durationInDays / totalDurationInDays) * 100;
+        eventDiv.style.left = `${leftPosition}%`;
+        eventDiv.style.width = `${width}%`;
+        
+        const rowHeight = 45;
+        const row = Math.floor(index / 3);
+        eventDiv.style.top = `${row * rowHeight}px`;
 
-            eventDiv.style.left = `${leftPosition}%`;
-            eventDiv.style.width = `${width}%`;
-            eventDiv.style.top = `${index * 45}px`;
+        eventsDiv.appendChild(eventDiv);
+    });
 
-            eventsDiv.appendChild(eventDiv);
-        });
-    };
+    const rowsNeeded = Math.ceil(scholarships.length / 3);
+    eventsDiv.style.height = `${rowsNeeded * 45}px`;
+};
 
     const renderCalendar = () => {
         const date = new Date(currentYear, currentMonth, 1);
@@ -237,6 +375,37 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.classList.remove('active');
         });
     };
+
+     const openDeleteModal = (id) => {
+        deleteModal.classList.add('active');
+        confirmDeleteBtn.setAttribute('data-id', id);
+    };
+    
+    // === SCHOLARSHIP FUNCTIONS ===
+    // Tambahkan fungsi dari kode atas yang tidak ada di kode bawah
+    const deleteScholarship = (id) => {
+        scholarships = scholarships.filter(s => s.id !== id);
+        saveScholarships();
+        renderApp();
+    };
+
+    const submitApplication = (id) => {
+    const scholarship = scholarships.find(s => s.id === id);
+    if (scholarship) {
+        scholarship.applicationStatus = APPLICATION_STATUSES.SUBMITTED;
+        saveScholarships();
+        renderApp();
+    }
+};
+
+const updateApplicationResult = (id, status) => {
+    const scholarship = scholarships.find(s => s.id === id);
+    if (scholarship) {
+        scholarship.applicationStatus = status;
+        saveScholarships();
+        renderApp();
+    }
+};
 
     // === COLLABORATION FUNCTIONS ===
     const openCollabModal = () => {
@@ -480,102 +649,177 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.addEventListener('click', (e) => e.target === modal && closeModal());
     });
 
-    // Form Submission
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const id = document.getElementById('scholarship-id').value || Date.now();
-        const name = document.getElementById('name').value.trim();
-        const start = document.getElementById('start-date').value;
-        const end = document.getElementById('end-date').value;
-        const requirementsText = document.getElementById('requirements').value;
-        
-        if (!name || !start || !end) {
-            alert('Nama dan tanggal beasiswa wajib diisi.');
-            return;
-        }
-        
-        if (new Date(start) > new Date(end)) {
-            alert('Tanggal tutup tidak boleh sebelum tanggal buka!');
-            return;
-        }
-        
-        const requirements = requirementsText.split('\n')
-            .filter(line => line.trim() !== '')
-            .map(text => ({ text: text.trim(), completed: false }));
-        
-        const scholarship = {
-            id,
-            name,
-            start,
-            end,
-            requirements
-        };
-        
-        const existingIndex = scholarships.findIndex(s => s.id === id);
-        if (existingIndex >= 0) {
-            scholarships[existingIndex] = scholarship;
-        } else {
-            scholarships.push(scholarship);
-        }
-        
-        scholarships.sort((a, b) => new Date(a.start) - new Date(b.start));
-        saveScholarships();
-        renderApp();
-        form.reset();
-        closeModal();
+    // Delete
+    confirmDeleteBtn.addEventListener('click', () => {
+        const id = confirmDeleteBtn.getAttribute('data-id');
+        deleteScholarship(id);
+        deleteModal.classList.remove('active');
+    });
+    cancelDeleteBtn.addEventListener('click', () => {
+        deleteModal.classList.remove('active');
+    });
+    document.querySelector('#delete-modal .close-modal').addEventListener('click', () => {
+        deleteModal.classList.remove('active');
     });
 
+    // Form Submission
+    form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const idInput = document.getElementById('scholarship-id');
+    const id = idInput.value || generateId();
+    const name = document.getElementById('name').value.trim();
+    const start = document.getElementById('start-date').value;
+    const end = document.getElementById('end-date').value;
+    const infoLink = document.getElementById('info-link').value.trim();
+    const registerLink = document.getElementById('register-link').value.trim();
+    const requirementsText = document.getElementById('requirements').value;
+
+    // Validate required fields
+    if (!name || !start || !end) {
+        alert('Nama dan tanggal beasiswa wajib diisi!');
+        return;
+    }
+
+    if (new Date(start) > new Date(end)) {
+        alert('Tanggal tutup tidak boleh sebelum tanggal buka!');
+        return;
+    }
+
+    // Create new scholarship object
+    const newScholarship = {
+        id,
+        name,
+        start,
+        end,
+        links: {
+            info: infoLink,
+            register: registerLink
+        },
+        requirements: requirementsText.split('\n')
+            .filter(line => line.trim() !== '')
+            .map(text => ({ text: text.trim(), completed: false })),
+         applicationStatus: document.getElementById('application-status').value
+    };
+
+    // Check if editing existing scholarship
+    const existingIndex = scholarships.findIndex(s => s.id === id);
+    if (existingIndex >= 0) {
+        // Preserve existing status and completed requirements
+        newScholarship.applicationStatus = scholarships[existingIndex].applicationStatus;
+        newScholarship.requirements = newScholarship.requirements.map(newReq => {
+            const existingReq = scholarships[existingIndex].requirements.find(r => r.text === newReq.text);
+            return existingReq ? { ...newReq, completed: existingReq.completed } : newReq;
+        });
+        scholarships[existingIndex] = newScholarship;
+    } else {
+        scholarships.push(newScholarship);
+    }
+
+    // Sort and save
+    scholarships.sort((a, b) => new Date(a.start) - new Date(b.start));
+    saveScholarships();
+    renderApp();
+    
+    // Reset form and close modal
+    form.reset();
+    idInput.value = '';
+    closeModal();
+});
+
+
     // Scholarship List Interactions
-    scholarshipListContainer.addEventListener('click', (e) => {
-        const reqItem = e.target.closest('li');
+     scholarshipListContainer.addEventListener('click', (e) => {
+        const reqItem = e.target.closest('li[data-req-text]');
         const deleteButton = e.target.closest('.delete-btn');
         const editButton = e.target.closest('.edit-btn');
+        const submitButton = e.target.closest('.btn-submit');
+        const acceptedButton = e.target.closest('.btn-accepted');
+        const rejectedButton = e.target.closest('.btn-rejected');
+    
+   if (editButton) {
+    e.preventDefault();
+    const id = editButton.getAttribute('data-id');
+    const scholarship = scholarships.find(s => s.id === id);
+    if (scholarship) {
+        document.getElementById('modal-title').textContent = 'Edit Beasiswa';
+        document.getElementById('scholarship-id').value = scholarship.id;
+        document.getElementById('name').value = scholarship.name;
+        document.getElementById('start-date').value = scholarship.start;
+        document.getElementById('end-date').value = scholarship.end;
+        document.getElementById('info-link').value = scholarship.links?.info || '';
+        document.getElementById('register-link').value = scholarship.links?.register || '';
+        document.getElementById('requirements').value = scholarship.requirements.map(r => r.text).join('\n');
         
-        if (editButton) {
-            const id = editButton.getAttribute('data-id');
-            const scholarship = scholarships.find(s => s.id == id);
-            if (scholarship) {
-                document.getElementById('modal-title').textContent = 'Edit Beasiswa';
-                document.getElementById('scholarship-id').value = scholarship.id;
-                document.getElementById('name').value = scholarship.name;
-                document.getElementById('start-date').value = scholarship.start;
-                document.getElementById('end-date').value = scholarship.end;
-                document.getElementById('requirements').value = scholarship.requirements.map(r => r.text).join('\n');
-                modal.classList.add('active');
-            }
-        }
-        
+        document.getElementById('application-status').value = scholarship.applicationStatus || '';
+        modal.classList.add('active');
+    }
+    return;
+}
+
         if (deleteButton) {
-            const listItem = deleteButton.closest('.scholarship-list-item');
-            const id = listItem.getAttribute('data-id');
-            if (confirm('Apakah Anda yakin ingin menghapus beasiswa ini?')) {
-                listItem.style.transition = 'opacity 0.3s, transform 0.3s'; 
-                listItem.style.opacity = '0'; 
-                listItem.style.transform = 'translateX(-20px)';
-                setTimeout(() => { 
-                    scholarships = scholarships.filter(s => s.id !== id); 
-                    saveScholarships(); 
-                    renderApp(); 
-                }, 300);
-            }
+            e.preventDefault();
+            const id = deleteButton.getAttribute('data-id');
+            openDeleteModal(id);
+            return;
         }
         
-        if (reqItem) {
-            const listItem = reqItem.closest('.scholarship-list-item');
-            const scholarshipId = listItem.getAttribute('data-id');
-            const reqText = reqItem.getAttribute('data-req-text');
-            const scholarship = scholarships.find(s => s.id === scholarshipId);
-            
-            if (scholarship) {
-                const requirement = scholarship.requirements.find(r => r.text === reqText);
-                if (requirement) { 
-                    requirement.completed = !requirement.completed; 
-                    saveScholarships(); 
-                    renderApp(); 
+        if (submitButton) {
+            e.preventDefault();
+            const id = submitButton.getAttribute('data-id');
+            submitApplication(id);
+            return;
+        }
+        
+        if (acceptedButton) {
+            e.preventDefault();
+            const id = acceptedButton.getAttribute('data-id');
+            updateApplicationResult(id, APPLICATION_STATUSES.ACCEPTED);
+            return;
+        }
+        
+        if (rejectedButton) {
+            e.preventDefault();
+            const id = rejectedButton.getAttribute('data-id');
+            updateApplicationResult(id, APPLICATION_STATUSES.REJECTED);
+            return;
+        }
+        
+    
+    if (reqItem) {
+        e.preventDefault();
+        const listItem = reqItem.closest('.scholarship-list-item');
+        const scholarshipId = listItem.getAttribute('data-id');
+        const reqText = reqItem.getAttribute('data-req-text');
+        const scholarship = scholarships.find(s => s.id === scholarshipId);
+        
+        if (scholarship) {
+            const requirement = scholarship.requirements.find(r => r.text === reqText);
+            if (requirement) { 
+                requirement.completed = !requirement.completed; 
+                saveScholarships(); 
+                
+                // Update UI langsung tanpa render ulang semua
+                const checkboxIcon = reqItem.querySelector('.material-icons-sharp');
+                checkboxIcon.textContent = requirement.completed ? 'check_box' : 'check_box_outline_blank';
+                reqItem.classList.toggle('completed', requirement.completed);
+                
+                // Update progress bar
+                const progressData = calculateProgress(scholarship);
+                const progressBar = listItem.querySelector('.progress-bar');
+                const progressInfo = listItem.querySelector('.progress-info');
+                if (progressBar) progressBar.style.width = `${progressData.progress}%`;
+                if (progressInfo) {
+                    progressInfo.innerHTML = `
+                        <span>${progressData.completed}/${progressData.total} persyaratan</span>
+                        <span>${Math.round(progressData.progress)}% selesai</span>
+                    `;
                 }
             }
         }
-    });
+        return;
+    }
+});
     
     // Calendar navigation
     prevMonthBtn.addEventListener('click', () => { 
